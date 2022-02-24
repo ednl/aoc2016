@@ -54,7 +54,7 @@ int main(void)
 
         // Sort histogram
         // Because qsort sorts in place, hist needs to be a struct
-        // to be able to track the letter as well its frequency.
+        // to be able to track the letter as well as its frequency
         qsort(hist, ALPH_LEN, sizeof(AlphHist), cmphist);
 
         // Compare checksum to the 5 most frequent letters
