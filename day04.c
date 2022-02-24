@@ -16,13 +16,14 @@ typedef struct {
 } AlphHist;
 static AlphHist hist[ALPH_LEN] = {0};
 
+// Sort by count descending, letter ascending
 static int cmphist(const void* a, const void* b)
 {
     const AlphHist *h1 = (const AlphHist*)a;
     const AlphHist *h2 = (const AlphHist*)b;
     const int countdiff = h2->count - h1->count;  // safe because INT_MIN is not present
     if (!countdiff)
-        return h1->letter - h2->letter;
+        return h1->letter - h2->letter;  // alphabetically if same frequency
     return countdiff;
 }
 
@@ -31,21 +32,37 @@ int main(void)
     FILE *f = fopen("input04.txt", "r");
     if (!f)
         return 1;
+
     int i, n, sectorid, sectorsum = 0;
-    while (fscanf(f, "%"NAME_FMT"[-a-z]%n%d[%"CHKSUM_FMT"s] ", name, &n, &sectorid, checksum) == 3) {
+    while (fscanf(f, "%"NAME_FMT"[-a-z]%n%d[%"CHKSUM_FMT"s] ", name, &n, &sectorid, checksum) == 3)
+    {
+        // Reset histogram array
         for (int j = 0; j < ALPH_LEN; ++j)
             hist[j] = (AlphHist){0, 'a' + (char)j};
+
+        // Delete last char which is always a dash
         if (n > 0)
             name[--n] = '\0';
-        for (int j = 0; j < n; ++j) {
+
+        // Count letter occurences in the name
+        for (int j = 0; j < n; ++j)
+        {
             int bin = name[j] - 'a';
             if (bin >= 0 && bin < ALPH_LEN)
-                hist[bin].count++;
+                hist[bin].count++;  // count the letters
         }
+
+        // Sort histogram
+        // Because qsort sorts in place, hist needs to be a struct
+        // to be able to track the letter as well its frequency.
         qsort(hist, ALPH_LEN, sizeof(AlphHist), cmphist);
+
+        // Compare checksum to the 5 most frequent letters
         i = 0;
         while (i < CHKSUM_LEN && checksum[i] == hist[i].letter)
             ++i;
+
+        // If it's a valid checksum then sum the Sector ID and decrypt the name
         if (i == CHKSUM_LEN) {
             sectorsum += sectorid;
             for (int j = 0; j < n; ++j) {
@@ -58,6 +75,13 @@ int main(void)
         }
     }
     fclose(f);
-    printf("Part 1: %d\n", sectorsum);
+
+    // Solution (print to stderr to avoid grep for part 2)
+    fprintf(stderr, "Part 1: %d\n", sectorsum);  // 137896
+
+    // Part 2 is "the Sector ID of the room where North Pole objects are stored"
+    // so can probably be found by, e.g.: ./a.out | fgrep north
+    // => Part 2: 501
+
     return 0;
 }
